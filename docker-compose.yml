@@ -1,0 +1,88 @@
+services:
+  api:
+    build: .
+    container_name: task_management_api
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - REDIS_URL=redis://redis:6379/0
+      - EMAIL_HOST=smtp.gmail.com
+      - EMAIL_PORT=587
+      - EMAIL_USER=kadali.hrv@gmail.com
+      - EMAIL_PASSWORD=vjqo lfwj zzdz fmqn
+      - EMAIL_FROM=206m1a0540@gmail.com
+    depends_on:
+      - mysql
+      - redis
+    restart: unless-stopped
+    volumes:
+      - .:/app
+
+  mysql:
+    image: mysql:8.0
+    container_name: task_management_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: task_manager
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password
+
+  redis:
+    image: redis:7-alpine
+    container_name: task_management_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  celery_worker:
+    build: .
+    container_name: task_management_celery_worker
+    command: celery -A app.core.celery_app worker --loglevel=info
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - REDIS_URL=redis://redis:6379/0
+      - EMAIL_HOST=smtp.gmail.com
+      - EMAIL_PORT=587
+      - EMAIL_USER=kadali.hrv@gmail.com
+      - EMAIL_PASSWORD=vjqo lfwj zzdz fmqn
+      - EMAIL_FROM=206m1a0540@gmail.com
+    depends_on:
+      - mysql
+      - redis
+    restart: unless-stopped
+    volumes:
+      - .:/app
+
+  celery_beat:
+    build: .
+    container_name: task_management_celery_beat
+    command: celery -A app.core.celery_app beat --loglevel=info
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - REDIS_URL=redis://redis:6379/0
+      - EMAIL_HOST=smtp.gmail.com
+      - EMAIL_PORT=587
+      - EMAIL_USER=kadali.hrv@gmail.com
+      - EMAIL_PASSWORD=vjqo lfwj zzdz fmqn
+      - EMAIL_FROM=206m1a0540@gmail.com
+    depends_on:
+      - mysql
+      - redis
+    restart: unless-stopped
+    volumes:
+      - .:/app
+
+volumes:
+  mysql_data:
+  redis_data:
